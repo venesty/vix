@@ -1,0 +1,24 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+	
+	<bean id="loggingStockSummaryHandler" class="com.venesty.exchange.core.service.impl.LoggingStockSummaryHandler" />
+	
+	<bean id="stockService" class="com.venesty.exchange.core.service.impl.StockServiceImpl">
+		<property name="summaryHandler" ref="loggingStockSummaryHandler" />
+	</bean>
+	
+	<util:list id="stockServices">
+		<ref bean="stockService"/>
+	</util:list>
+	
+	<bean id="orderExecutorService" class="java.util.concurrent.Executors" factory-method="newSingleThreadExecutor" destroy-method="shutdownNow" />
+	
+	<bean id="orderProcessor" class="com.venesty.exchange.core.processor.impl.OrderProcessorImpl">
+		<property name="executorService" ref="orderExecutorService" />
+		<property name="stockServices" ref="stockServices" />
+	</bean>
+
+</beans>
