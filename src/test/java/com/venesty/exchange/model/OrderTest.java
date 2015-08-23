@@ -23,119 +23,119 @@ public class OrderTest {
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithNull() {
+	public void testNewOrderValidatorWithNull() throws OrderProcessorException {
 		Order order = null;
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithNullRic() {
+	public void testNewOrderValidatorWithNullRic() throws OrderProcessorException {
 		Order order = new Order(null, 1000, 500.00, Direction.BUY, "user1");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithEmptyRic() {
+	public void testNewOrderValidatorWithEmptyRic() throws OrderProcessorException {
 		Order order = new Order("", 1000, 500.00, Direction.BUY, "user1");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithEmptySpaceRic() {
+	public void testNewOrderValidatorWithEmptySpaceRic() throws OrderProcessorException {
 		Order order = new Order("  ", 1000, 500.00, Direction.BUY, "user1");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithNullQuantity() {
+	public void testNewOrderValidatorWithNullQuantity() throws OrderProcessorException {
 		Order order = new Order("APP.L", null, 500.00, Direction.BUY, "user1");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithZeroQuantity() {
+	public void testNewOrderValidatorWithZeroQuantity() throws OrderProcessorException {
 		Order order = new Order("APP.L", 0, 500.00, Direction.BUY, "user1");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithNegativeQuantity() {
+	public void testNewOrderValidatorWithNegativeQuantity() throws OrderProcessorException {
 		Order order = new Order("APP.L", -100, 500.00, Direction.BUY, "user1");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithNullPrice() {
+	public void testNewOrderValidatorWithNullPrice() throws OrderProcessorException {
 		Order order = new Order("APP.L", 1000, null, Direction.BUY, "user1");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithZeroPrice() {
+	public void testNewOrderValidatorWithZeroPrice() throws OrderProcessorException {
 		Order order = new Order("APP.L", 1000, 0.00, Direction.BUY, "user1");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithNegativePrice() {
+	public void testNewOrderValidatorWithNegativePrice() throws OrderProcessorException {
 		Order order = new Order("APP.L", 1000, -500.00, Direction.BUY, "user1");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithNullDirection() {
+	public void testNewOrderValidatorWithNullDirection() throws OrderProcessorException {
 		Order order = new Order("APP.L", 1000, 500.00, null, "user1");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test
-	public void testNewOrderValidatorWithBuyDirection() {
+	public void testNewOrderValidatorWithBuyDirection() throws OrderProcessorException {
 		Order order = new Order("APP.L", 1000, 500.00, Direction.BUY, "user1");
 		validator.validate(order);
 		assertThat("No Exception was thrown", true);
 	}
 	
 	@Test
-	public void testNewOrderValidatorWithSellDirection() {
+	public void testNewOrderValidatorWithSellDirection() throws OrderProcessorException {
 		Order order = new Order("APP.L", 1000, 500.00, Direction.SELL, "user1");
 		validator.validate(order);
 		assertThat("No Exception was thrown", true);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithNullUser() {
+	public void testNewOrderValidatorWithNullUser() throws OrderProcessorException {
 		Order order = new Order("APP.L", 1000, 500.00, Direction.BUY, null);
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithEmptyUser() {
+	public void testNewOrderValidatorWithEmptyUser() throws OrderProcessorException {
 		Order order = new Order("APP.L", 1000, 500.00, Direction.BUY, "");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test(expected = OrderProcessorException.class)
-	public void testNewOrderValidatorWithEmptySpaceUser() {
+	public void testNewOrderValidatorWithEmptySpaceUser() throws OrderProcessorException {
 		Order order = new Order("APP.L", 1000, 500.00, Direction.BUY, " ");
 		validator.validate(order);
 		assertThat("OrderProcessorExeption expected", false);
 	}
 	
 	@Test
-	public void testNewOrderValidatorWithValidOrder() {
+	public void testNewOrderValidatorWithValidOrder() throws OrderProcessorException {
 		Order order = new Order("APP.L", 1000, 500.00, Direction.BUY, "user1");
 		validator.validate(order);
 		assertThat("No Exception was thrown", true);

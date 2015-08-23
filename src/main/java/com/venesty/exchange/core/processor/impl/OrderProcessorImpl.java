@@ -57,13 +57,13 @@ public class OrderProcessorImpl implements OrderProcessor {
 
     public OrderProcessorImpl() {
         this.orderBuffer = new LinkedBlockingQueue<Order>(bufferSize);
-        this.started = new AtomicBoolean(true);
+        this.started = new AtomicBoolean(false);
     }
 
     public void startProcessor() {
         LOG.info("OrderProcessor starting...");
-        if (started.get()) {
-            try {
+        if (started.compareAndSet(false, true)) { 
+        	try {
             	future = executorService.submit(getOrderConsumer());
             } catch (RejectedExecutionException ree) {
             	LOG.error("Unable to start processesor", ree);
@@ -73,13 +73,11 @@ public class OrderProcessorImpl implements OrderProcessor {
         LOG.info("...OrderProcessor started.");
     }
 
-    public void addNewOrder(Order order) throws ProcessorException, OrderProcessorException {
+    public void addNewOrder(Order order) throws ProcessorException {
     	
     	if (future == null) {
     		throw new ProcessorException("Cannot add new Order: " + order + " , processor is not started");
     	}
-    	
-    	validator.validate(order);
     	
     	try {
             while (!orderBuffer.offer(order, TIME_OUT, TimeUnit.MILLISECONDS)) {
@@ -95,8 +93,13 @@ public class OrderProcessorImpl implements OrderProcessor {
         LOG.info("OrderProcessor stopping...");
         this.started.compareAndSet(true, false);
     	try {
-            this.future.get();
+    		if (this.future != null) {
+    			this.future.get();
+    		} else {
+    			throw new ProcessorException("OrderProcessor may not have been initialised! Try starting it first.");
+    		}
         } catch (Exception e) {
+        	LOG.error("Error occured whilst shutting down the OrderProcessor", e);
             throw new ProcessorException("Error occured while shutting down the OrderProcessor.", e);
         } finally {
             this.orderBuffer.clear();
@@ -123,10 +126,14 @@ public class OrderProcessorImpl implements OrderProcessor {
             public Void call() throws Exception {
                 while (hasOrders()) {
                     Order order = orderBuffer.poll(1000, TimeUnit.MILLISECONDS);
-                    if (order != null) {
-                        for (StockService<Order> service : stockServices) {
+                    try {
+                    	validator.validate(order);
+                    	for (StockService<Order> service : stockServices) {
                             service.process(order);
                         }
+                    } catch (OrderProcessorException ope) {
+                    	LOG.warn("Order cancelled.", ope);
+                    	//TODO: send order to another store for error reporting.
                     }
                 }
                 return null;

@@ -26,6 +26,24 @@ public class OrderMother {
 				new Order("APP.L", 1000, 102.00, Direction.SELL, "user4"));
 	}
 	
+	public static List<Order> getInvalidOpenOrders() {
+		return Lists.newArrayList(
+				new Order(null, 1000, 101.00, Direction.SELL, "user1"),
+				new Order("", 500, 100.00, Direction.SELL, "user2"),
+				new Order(" ", 1000, 99.00, Direction.BUY, "user3"),
+				new Order("VOD.L", null, 101.00, Direction.BUY, "user1"),
+				new Order("VOD.L", 0, 102.00, Direction.SELL, "user2"),
+				new Order("APP.L", -1000, 101.00, Direction.SELL, "user3"),
+				new Order("APP.L", 500, null, Direction.SELL, "user1"),
+				new Order("APP.L", 1000, 0.0, Direction.BUY, "user2"),
+				new Order("APP.L", 500, -101.00, Direction.BUY, "user1"),
+				new Order("APP.L", 1000, 102.00, null, "user4"),
+				new Order("APP.L", 1000, 102.00, Direction.BUY, null),
+				new Order("APP.L", 1000, 102.00, Direction.SELL, ""),
+				new Order("APP.L", 1000, 102.00, Direction.BUY, " "));
+		
+	}
+	
     public static List<Order> getOpenBuyOrdersForVodl() {
 	    return Lists.newArrayList(
 	                    new Order("VOD.L", 1000, 101.00, Direction.BUY, "user3"),

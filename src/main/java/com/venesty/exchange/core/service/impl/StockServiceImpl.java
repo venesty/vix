@@ -52,7 +52,6 @@ public class StockServiceImpl implements StockService<Order> {
     public StockServiceImpl() {
     }
 
-    
     public void process(Order newOrder) {
         LOG.info("Processing new order" + newOrder);
         Order order = newOrder;
@@ -142,7 +141,8 @@ public class StockServiceImpl implements StockService<Order> {
      * Looks up a mathing Order's index.
      */
     private int findIndex(Order newOrder) {
-        int index = Iterables.indexOf(this.openOrders, Predicates.and(new RicMatcher(newOrder.getRic()),
+        @SuppressWarnings("unchecked")
+		int index = Iterables.indexOf(this.openOrders, Predicates.and(new RicMatcher(newOrder.getRic()),
                         new OpposingDirectionMatcher(newOrder.getDirection()), new QuantityMatcher(newOrder.getQuantity()),
                         new SellPriceMatcher(newOrder.getPrice())));
         return index;

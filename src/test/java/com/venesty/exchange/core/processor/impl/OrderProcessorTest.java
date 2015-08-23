@@ -1,41 +1,81 @@
 package com.venesty.exchange.core.processor.impl;
 
-import org.junit.After;
-import org.junit.Before;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import com.venesty.exchange.core.exception.ProcessorException;
 import com.venesty.exchange.core.processor.OrderProcessor;
 import com.venesty.exchange.model.Order;
 import com.venesty.exchange.util.OrderMother;
+import com.venesty.exchange.util.TestStockService;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "classpath:application-context-exchange.xml" })
+@ContextConfiguration(locations = { "classpath:application-context-exchange-test.xml" })
+@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD )
 public class OrderProcessorTest {
 
     @Autowired
     private OrderProcessor orderProcessor;
-
-    @Before
-    public void setUp() {
-        this.orderProcessor.startProcessor();
+    
+    @Autowired
+    private TestStockService stockService;
+    
+    
+    @Test(expected = ProcessorException.class)
+    public void testOrderProcessorNotStarted() {
+    	for (Order order : OrderMother.getOpenOrders()) {
+    		orderProcessor.addNewOrder(order);
+    	}
+    	assertThat("OrderProcessor not started.", false);
     }
+    
+    @Test(expected = ProcessorException.class)
+    public void testOrderProcessingNotStartedAndAwaitCompletionCalled() {
+    	orderProcessor.awaitCompletion();
+    	assertThat("OrderProcessor not started.", false);
+    }
+    
 
     @Test
-    public void testMatches() {
-        
-        OrderMother.getOpenOrders();
+    public void testValidOrders() {
+    	
+    	orderProcessor.startProcessor();
+    	
         for (Order order : OrderMother.getOpenOrders()) {
         	orderProcessor.addNewOrder(order);
         }
+        
+        // Need to await completion, else only partial orders may have been processed.
+        orderProcessor.awaitCompletion();
+        
+        assertThat(stockService.currentOpenOrdersSize(), equalTo(6));
+        assertThat(stockService.currentExecutedOrdersSize(), equalTo(2));
+        
     }
+    
+    @Test
+    public void testInvalidOrders() {
+    	
+    	orderProcessor.startProcessor();
+    	
+    	for (Order order : OrderMother.getInvalidOpenOrders()) {
+    		orderProcessor.addNewOrder(order);
+    	}
 
-    @After
-    public void tearDown() {
-        this.orderProcessor.awaitCompletion();
+    	// Need to await completion, else only partial orders may have been processed.
+    	orderProcessor.awaitCompletion();
+    	
+    	assertThat(stockService.currentExecutedOrdersSize(), equalTo(0));
+    	assertThat(stockService.currentOpenOrdersSize(), equalTo(0));
+    	
     }
 
 }

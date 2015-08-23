@@ -1,6 +1,6 @@
 package com.venesty.exchange.core.processor;
 
-import com.venesty.exchange.core.exception.OrderProcessorException;
+import com.venesty.exchange.core.exception.ProcessorException;
 import com.venesty.exchange.model.Order;
 
 /**
@@ -29,8 +29,8 @@ public interface OrderProcessor {
      * Should be called to stop the OrderProcessor from running.
      * Should ensure that the backlog is cleared and no new orders can be placed.
      * 
-     * @throws OrderProcessorException 
+     * @throws ProcessorException 
      */
-    public void awaitCompletion() throws OrderProcessorException;
+    public void awaitCompletion() throws ProcessorException;
 
 }

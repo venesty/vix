@@ -7,7 +7,7 @@ import com.venesty.exchange.core.processor.OrderProcessor;
  * @author vikash
  *
  */
-public class OrderProcessorException extends RuntimeException {
+public class OrderProcessorException extends Exception {
 
     public OrderProcessorException(String message) {
         super(message);
