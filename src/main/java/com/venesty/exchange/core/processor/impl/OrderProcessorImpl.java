@@ -79,14 +79,19 @@ public class OrderProcessorImpl implements OrderProcessor {
     		throw new ProcessorException("Cannot add new Order: " + order + " , processor is not started");
     	}
     	
-    	try {
-            while (!orderBuffer.offer(order, TIME_OUT, TimeUnit.MILLISECONDS)) {
-                sleep(50);
-            }
-        } catch (Exception e) {
-        	LOG.error("An error occurred whilst adding the new order: " + order);
-        	throw new ProcessorException("An error occurred adding the new order");
-        }
+		if (order != null) {
+			try {
+				while (!orderBuffer.offer(order, TIME_OUT,
+						TimeUnit.MILLISECONDS)) {
+					sleep(50);
+				}
+			} catch (Exception e) {
+				LOG.error("An error occurred whilst adding the new order: "
+						+ order, e);
+				throw new ProcessorException(
+						"An error occurred adding the new order", e);
+			}
+		}
     }
 
     public void awaitCompletion() throws ProcessorException {

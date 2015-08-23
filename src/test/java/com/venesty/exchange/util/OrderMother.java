@@ -1,12 +1,9 @@
 package com.venesty.exchange.util;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimaps;
 import com.venesty.exchange.model.Order;
 import com.venesty.exchange.model.Order.Direction;
 
@@ -50,7 +47,7 @@ public class OrderMother {
 	                    new Order("VOD.L", 1000, 102.00, Direction.BUY, "user1"),
 	                    new Order("VOD.L", 500, 101.00, Direction.BUY, "user2"),
 	                    new Order("VOD.L", 500, 102.00, Direction.BUY, "user1"),
- new Order("VOD.L", 1000, 100.00, Direction.BUY, "user4"));
+	                    new Order("VOD.L", 1000, 100.00, Direction.BUY, "user4"));
 	}
 	
     public static List<Order> getOpenSellOrdersForVodl() {
@@ -61,15 +58,6 @@ public class OrderMother {
                         new Order("VOD.L", 500, 102.00, Direction.SELL, "user1"),
                         new Order("VOD.L", 1000, 100.00, Direction.SELL, "user2"));
     }
-	
-    public static Map<Double, Collection<Order>> getOpenInterestOrdersForVodl(Direction direction) {
-        List<Order> orders = direction.equals(Direction.SELL) ? getOpenSellOrdersForVodl() : getOpenBuyOrdersForVodl();
-        return Multimaps.index(orders, new Function<Order, Double>() {
-            public Double apply(Order input) {
-                return new Double(input.getPrice());
-            }
-        }).asMap();
-	}
 
 	public static List<Order> getExecutedOrders() {
 		return Lists.transform(getOpenOrders(), new Function<Order, Order>() {
@@ -97,5 +85,46 @@ public class OrderMother {
 	        
         });
     }
+	
+	/**
+	 * Large list of orders.
+	 * 100 sell and 100 buy orders with match. 100 umatched.
+	 * 
+	 * 75 invalid orders.
+	 * 
+	 * 
+	 * 
+	 * @return
+	 */
+	public static List<Order> getLargeValidAndInvalidOrders() {
+		
+		List<Order> orders = Lists.newArrayListWithCapacity(275);
+		
+		//valid sell and buy
+		for (int i=100; i<200; i++) {
+			Order sellOrder = new Order("VOD.L", 100 * i, 100.00 + i, Direction.SELL, "user1");
+			orders.add(sellOrder);
+			
+			Order buyOrder = new Order("VOD.L", 100 * i, 101.00 + i, Direction.BUY, "user1");
+			orders.add(buyOrder);
+			
+			Order unmatched = new Order("VOD.L", 100 * i, 100.00 + i, Direction.BUY, "user1");
+			orders.add(unmatched);
+		}
+		
+		// invalid buy and sell
+		for (int i=100; i<225; i++) {
+			Order sellOrder = new Order("", 100 * i, 100.00 + i, Direction.SELL, "user2");
+			orders.add(sellOrder);
+			
+			Order buyOrder = new Order("APP.L", 100 * i, 101.00 + i, Direction.BUY, "");
+			orders.add(buyOrder);
+			
+			orders.add(null);
+		}
+			
+		return orders;
+				
+	}
 
 }

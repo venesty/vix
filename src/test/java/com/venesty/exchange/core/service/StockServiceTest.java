@@ -34,6 +34,11 @@ public class StockServiceTest {
         when(order.getUser()).thenReturn("user1");
         when(order.getDirection()).thenReturn(Direction.SELL);
     }
+    
+    @Test
+    public void testMatchByOrder() {
+    	
+    }
 
     @Test
     public void testAverageExecutedOrder() {
