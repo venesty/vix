@@ -26,6 +26,20 @@ import com.venesty.exchange.core.service.StockSummaryHandler;
 import com.venesty.exchange.model.Order;
 import com.venesty.exchange.model.Order.Direction;
 
+/**
+ * {@link StockService} implementation.
+ * 
+ * Maintains two {@link List}s, open orders and executed orders.
+ * If a new {@link Order} is matched according to this implementation then it will be added
+ * to the executed list. Else it will remain in the open orders list.
+ * 
+ * N.B: There should be a mechanism in place to deal with long standing open order.
+ * Either they are removed after a n number of new orders are unmatched or use some timestamp
+ * stategy and let the Order expire etc.
+ * 
+ * @author vikash
+ *
+ */
 public class StockServiceImpl implements StockService<Order> {
     private static Logger LOG = LoggerFactory.getLogger(StockServiceImpl.class);
 
@@ -38,6 +52,7 @@ public class StockServiceImpl implements StockService<Order> {
     public StockServiceImpl() {
     }
 
+    
     public void process(Order newOrder) {
         LOG.info("Processing new order" + newOrder);
         Order order = newOrder;
@@ -49,7 +64,7 @@ public class StockServiceImpl implements StockService<Order> {
         } else {
             openOrders.add(order);
         }
-        notifyDataConsumers(order);
+        notifyDataHandler(order);
     }
 
     public Integer getExecutedQuantityFor(String ric, String user) {
@@ -105,14 +120,27 @@ public class StockServiceImpl implements StockService<Order> {
         return map;
     }
 
+    /**
+     * Provide an ImmutableList copy of openOrders.
+     * 
+     * @return {@link Iterable} of open order.
+     */
     protected Iterable<Order> getOpenOrders() {
         return ImmutableList.copyOf(this.openOrders);
     }
 
+    /**
+     * Provide an {@link ImmutableList} copy of executed orders.
+     * 
+     * @return {@link Iterable} of executed orders.
+     */
     protected Iterable<Order> getExecutedOrders() {
         return ImmutableList.copyOf(this.executedOrders);
     }
     
+    /*
+     * Looks up a mathing Order's index.
+     */
     private int findIndex(Order newOrder) {
         int index = Iterables.indexOf(this.openOrders, Predicates.and(new RicMatcher(newOrder.getRic()),
                         new OpposingDirectionMatcher(newOrder.getDirection()), new QuantityMatcher(newOrder.getQuantity()),
@@ -120,7 +148,10 @@ public class StockServiceImpl implements StockService<Order> {
         return index;
     }
 
-    private void notifyDataConsumers(Order order) {
+    /*
+     * Notify handler of newly added Order.
+     */
+    private void notifyDataHandler(Order order) {
         summaryHandler.handleNewOrder(order);
         summaryHandler.handleAverageExecutionPriceFor(getAverageExecutedPriceFor(order.getRic()), order.getRic());
         summaryHandler.handleExecutedQuantityFor(getExecutedQuantityFor(order.getRic(), order.getUser()), order.getRic(), order.getUser());

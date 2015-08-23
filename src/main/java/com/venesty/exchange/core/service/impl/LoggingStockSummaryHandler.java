@@ -7,6 +7,14 @@ import com.venesty.exchange.core.service.StockSummaryHandler;
 import com.venesty.exchange.model.Order;
 import com.venesty.exchange.model.Order.Direction;
 
+/**
+ * Simple logging implementation of {@link StockSummaryHandler}
+ * 
+ * Uses log4j to output details received.
+ * 
+ * @author vikash
+ *
+ */
 public class LoggingStockSummaryHandler implements StockSummaryHandler {
     private Logger LOG = LoggerFactory.getLogger(LoggingStockSummaryHandler.class);
 

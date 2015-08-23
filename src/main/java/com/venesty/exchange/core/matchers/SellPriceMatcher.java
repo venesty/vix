@@ -4,6 +4,12 @@ import com.google.common.base.Predicate;
 import com.venesty.exchange.model.Order;
 import com.venesty.exchange.model.Order.Direction;
 
+/**
+ * Simple predicate to match the sell price of an {@link Order}.
+ * 
+ * @author vikash
+ *
+ */
 public class SellPriceMatcher implements Predicate<Order> {
 
 	private Double price;

@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -14,10 +15,24 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.venesty.exchange.core.exception.OrderProcessorException;
+import com.venesty.exchange.core.exception.ProcessorException;
 import com.venesty.exchange.core.processor.OrderProcessor;
 import com.venesty.exchange.core.service.StockService;
+import com.venesty.exchange.core.service.impl.StockServiceImpl;
 import com.venesty.exchange.model.Order;
+import com.venesty.exchange.model.OrderValidator;
 
+/**
+ * Simple implementation of {@link OrderProcessor}
+ * 
+ * Runs asynchronously using a buffer as a queue system where orders can be added
+ * and queued up for later processing.
+ * 
+ * For the actual handling of the {@link Order}, see {@link StockServiceImpl}
+ * 
+ * @author vikash
+ *
+ */
 public class OrderProcessorImpl implements OrderProcessor {
     private static Logger LOG = LoggerFactory.getLogger(OrderProcessorImpl.class);
 
@@ -37,6 +52,8 @@ public class OrderProcessorImpl implements OrderProcessor {
     private int bufferSize = DEFAULT_BUFFER_SIZE;
 
     private List<StockService<Order>> stockServices;
+    
+    private OrderValidator validator;
 
     public OrderProcessorImpl() {
         this.orderBuffer = new LinkedBlockingQueue<Order>(bufferSize);
@@ -46,27 +63,41 @@ public class OrderProcessorImpl implements OrderProcessor {
     public void startProcessor() {
         LOG.info("OrderProcessor starting...");
         if (started.get()) {
-            future = executorService.submit(getOrderConsumer());
+            try {
+            	future = executorService.submit(getOrderConsumer());
+            } catch (RejectedExecutionException ree) {
+            	LOG.error("Unable to start processesor", ree);
+            	throw new ProcessorException("Unable to start processor", ree);
+            }
         }
         LOG.info("...OrderProcessor started.");
     }
 
-    public void addNewOrder(Order order) {
-        try {
+    public void addNewOrder(Order order) throws ProcessorException, OrderProcessorException {
+    	
+    	if (future == null) {
+    		throw new ProcessorException("Cannot add new Order: " + order + " , processor is not started");
+    	}
+    	
+    	validator.validate(order);
+    	
+    	try {
             while (!orderBuffer.offer(order, TIME_OUT, TimeUnit.MILLISECONDS)) {
                 sleep(50);
             }
         } catch (Exception e) {
+        	LOG.error("An error occurred whilst adding the new order: " + order);
+        	throw new ProcessorException("An error occurred adding the new order");
         }
     }
 
-    public void awaitCompletion() {
+    public void awaitCompletion() throws ProcessorException {
         LOG.info("OrderProcessor stopping...");
         this.started.compareAndSet(true, false);
     	try {
             this.future.get();
         } catch (Exception e) {
-            throw new OrderProcessorException("Error occured while shutting down the OrderProcessor.", e);
+            throw new ProcessorException("Error occured while shutting down the OrderProcessor.", e);
         } finally {
             this.orderBuffer.clear();
             LOG.info("Order queue has been cleared");
@@ -102,6 +133,7 @@ public class OrderProcessorImpl implements OrderProcessor {
             }
         };
     }
+    
 
     @Required
     public void setStockServices(List<StockService<Order>> stockServices) {
@@ -109,9 +141,14 @@ public class OrderProcessorImpl implements OrderProcessor {
     }
 
     @Required
-    public static void setExecutorService(ExecutorService executorService) {
+    public void setExecutorService(ExecutorService executorService) {
         OrderProcessorImpl.executorService = executorService;
     }
+    
+    @Required
+    public void setValidator(OrderValidator validator) {
+		this.validator = validator;
+	}
 
     public void setBufferSize(int bufferSize) {
         this.bufferSize = bufferSize;

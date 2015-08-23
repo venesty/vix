@@ -16,9 +16,12 @@
 	
 	<bean id="orderExecutorService" class="java.util.concurrent.Executors" factory-method="newSingleThreadExecutor" destroy-method="shutdownNow" />
 	
+	<bean id="processorOrderValidator" class="com.venesty.exchange.model.OrderValidator" />
+	
 	<bean id="orderProcessor" class="com.venesty.exchange.core.processor.impl.OrderProcessorImpl">
 		<property name="executorService" ref="orderExecutorService" />
 		<property name="stockServices" ref="stockServices" />
+		<property name="validator" ref="processorOrderValidator" />
 	</bean>
 
 </beans>
