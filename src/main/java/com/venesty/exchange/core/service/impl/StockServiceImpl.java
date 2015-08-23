@@ -52,10 +52,10 @@ public class StockServiceImpl implements StockService<Order> {
         notifyDataConsumers(order);
     }
 
-    public Integer getExecutedQuantityFor(Order order) {
+    public Integer getExecutedQuantityFor(String ric, String user) {
         Iterable<Integer> quantities = Iterables.transform(
                         Iterables.filter(getExecutedOrders(),
-                                        Predicates.and(new RicMatcher(order.getRic()), new UserMatcher(order.getUser()))),
+                                        Predicates.and(new RicMatcher(ric), new UserMatcher(user))),
                         new Function<Order, Integer>() {
                             public Integer apply(Order input) {
                                 if (input.getDirection().equals(Direction.BUY)) {
@@ -71,8 +71,8 @@ public class StockServiceImpl implements StockService<Order> {
         return qty;
     }
 
-    public Double getAverageExecutedOrderFor(Order order) {
-        Iterable<Order> orders = Iterables.filter(getExecutedOrders(), new RicMatcher(order.getRic()));
+    public Double getAverageExecutedPriceFor(String ric) {
+        Iterable<Order> orders = Iterables.filter(getExecutedOrders(), new RicMatcher(ric));
         Double sum = 0.0;
         for (Order anOrder : orders) {
             sum += anOrder.getExecutionPrice();
@@ -80,13 +80,13 @@ public class StockServiceImpl implements StockService<Order> {
         return sum / Iterables.size(orders);
     }
 
-    public Map<Double, Integer> getOpenInterestFor(Order value) {
+    public Map<Double, Integer> getOpenInterestFor(String ric, Direction direction) {
         Map<Double, Integer> map = Maps.newHashMap();
         Map<Double, Collection<Order>> openInterestOrders = Multimaps.index(
                         Iterables.filter(
                                         getOpenOrders(),
-                                        Predicates.and(new RicMatcher(value.getRic()),
-                                                        Predicates.not(new OpposingDirectionMatcher(value.getDirection())))),
+                                        Predicates.and(new RicMatcher(ric),
+                                                        Predicates.not(new OpposingDirectionMatcher(direction)))),
                         new Function<Order, Double>() {
                             public Double apply(Order input) {
                                 return new Double(input.getPrice());
@@ -122,9 +122,9 @@ public class StockServiceImpl implements StockService<Order> {
 
     private void notifyDataConsumers(Order order) {
         summaryHandler.handleNewOrder(order);
-        summaryHandler.handleAverageExecutionPriceFor(getAverageExecutedOrderFor(order), order.getRic());
-        summaryHandler.handleExecutedQuantityFor(getExecutedQuantityFor(order), order.getRic(), order.getUser());
-        Map<Double, Integer> openInterest = getOpenInterestFor(order);
+        summaryHandler.handleAverageExecutionPriceFor(getAverageExecutedPriceFor(order.getRic()), order.getRic());
+        summaryHandler.handleExecutedQuantityFor(getExecutedQuantityFor(order.getRic(), order.getUser()), order.getRic(), order.getUser());
+        Map<Double, Integer> openInterest = getOpenInterestFor(order.getRic(), order.getDirection());
         Double key = null;
         Integer totQty = null;
         if (!openInterest.keySet().isEmpty()) {

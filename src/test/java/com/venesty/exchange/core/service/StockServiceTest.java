@@ -37,19 +37,19 @@ public class StockServiceTest {
 
     @Test
     public void testAverageExecutedOrder() {
-        Double averageExecutedOrderFor = service.getAverageExecutedOrderFor(order);
+        Double averageExecutedOrderFor = service.getAverageExecutedPriceFor(order.getRic());
         assertThat(averageExecutedOrderFor, equalTo(100.6));
     }
 
     @Test
     public void testExecuteQuantityFor() {
-        Integer executedQuantityFor = service.getExecutedQuantityFor(order);
+        Integer executedQuantityFor = service.getExecutedQuantityFor(order.getRic(), order.getUser());
         assertThat(executedQuantityFor, equalTo(-500));
     }
 
     @Test
     public void testOpenInterestFor() {
-        Map<Double, Integer> openInterestFor = service.getOpenInterestFor(order);
+        Map<Double, Integer> openInterestFor = service.getOpenInterestFor(order.getRic(), order.getDirection());
 
         Map<Double, Integer> map1 = Maps.newHashMap(ImmutableMap.of(Double.valueOf(102.00), Integer.valueOf(1000),
                         Double.valueOf(101.00), Integer.valueOf(1000), Double.valueOf(100.00), Integer.valueOf(500)));

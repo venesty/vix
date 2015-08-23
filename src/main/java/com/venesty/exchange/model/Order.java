@@ -1,5 +1,12 @@
 package com.venesty.exchange.model;
 
+/**
+ * Simple model object representing an {@link Order}
+ * 
+ * 
+ * @author vikash
+ *
+ */
 public class Order {
 	
 	public static enum Direction {
