@@ -1,5 +1,7 @@
 package com.venesty.exchange.core.matchers;
 
+import java.math.BigDecimal;
+
 import com.google.common.base.Predicate;
 import com.venesty.exchange.model.Order;
 import com.venesty.exchange.model.Order.Direction;
@@ -12,17 +14,17 @@ import com.venesty.exchange.model.Order.Direction;
  */
 public class SellPriceMatcher implements Predicate<Order> {
 
-	private Double price;
+    private BigDecimal price;
 	
-	public SellPriceMatcher(Double price) {
+    public SellPriceMatcher(BigDecimal price) {
 		this.price = price;
 	}
 	
 	public boolean apply(Order input) {
 		if (input.getDirection().equals(Direction.SELL)) {
-			return input.getPrice() <= this.price;
+            return input.getPrice().doubleValue() <= this.price.doubleValue();
 		}
-		return this.price <= input.getPrice();
+        return this.price.doubleValue() <= input.getPrice().doubleValue();
 	}
 
 }

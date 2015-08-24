@@ -1,5 +1,7 @@
 package com.venesty.exchange.core.service.impl;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import utils.PriceUtil;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
@@ -16,6 +20,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
+import com.google.common.collect.Ordering;
+import com.venesty.exchange.core.matchers.ExactPriceMatcher;
 import com.venesty.exchange.core.matchers.OpposingDirectionMatcher;
 import com.venesty.exchange.core.matchers.QuantityMatcher;
 import com.venesty.exchange.core.matchers.RicMatcher;
@@ -52,18 +58,54 @@ public class StockServiceImpl implements StockService<Order> {
     public StockServiceImpl() {
     }
 
-    public void process(Order newOrder) {
+    public synchronized void process(Order newOrder) {
         LOG.info("Processing new order" + newOrder);
-        Order order = newOrder;
-        int index = findIndex(newOrder);
-        if (index > -1) {
-            order = openOrders.remove(index);
-            order.setExecutionPrice(newOrder.getPrice());
-            executedOrders.add(order);
+        Order matchedOrder = null;
+        Iterable<Order> openOrders = getOpenOrders();
+        int index = Iterables.indexOf(openOrders, Predicates.and(new RicMatcher(newOrder.getRic()),
+                        new OpposingDirectionMatcher(newOrder.getDirection()), new QuantityMatcher(newOrder.getQuantity()),
+                        new ExactPriceMatcher(newOrder.getPrice())));
+
+        if (index < 0) {
+            List<Order> sortedCopy = null;
+            // no Exact price match. So we look for sell price match
+            Iterable<Order> sellPriceMatchOpenOrders = Iterables.filter(openOrders, Predicates.and(
+                            new RicMatcher(newOrder.getRic()), new OpposingDirectionMatcher(newOrder.getDirection()),
+                            new QuantityMatcher(newOrder.getQuantity()), new SellPriceMatcher(newOrder.getPrice())));
+            if (newOrder.getDirection().equals(Direction.SELL)) {
+                Ordering<Order> byHighestPrice = Ordering.natural().reverse().onResultOf(new Function<Order, BigDecimal>() {
+
+                    public BigDecimal apply(Order input) {
+                        return input.getPrice();
+                    }
+                });
+                sortedCopy = byHighestPrice.sortedCopy(sellPriceMatchOpenOrders);
+            } else {
+                Ordering<Order> byLowestPrice = Ordering.natural().onResultOf(new Function<Order, BigDecimal>() {
+
+                    public BigDecimal apply(Order input) {
+                        return input.getPrice();
+                    }
+                });
+                sortedCopy = byLowestPrice.sortedCopy(sellPriceMatchOpenOrders);
+            }
+
+            matchedOrder = sortedCopy.isEmpty() ? null : sortedCopy.get(0);
+            if (matchedOrder != null) {
+                this.openOrders.remove(matchedOrder);
+            }
         } else {
-            openOrders.add(order);
+            matchedOrder = this.openOrders.remove(index);
         }
-        notifyDataHandler(order);
+
+        if (matchedOrder != null) {
+            matchedOrder.setExecutionPrice(newOrder.getPrice());
+            newOrder.setExecutionPrice(newOrder.getPrice());
+            this.executedOrders.add(matchedOrder);
+            this.executedOrders.add(newOrder);
+        } else {
+            this.openOrders.add(newOrder);
+        }
     }
 
     public Integer getExecutedQuantityFor(String ric, String user) {
@@ -85,29 +127,31 @@ public class StockServiceImpl implements StockService<Order> {
         return qty;
     }
 
-    public Double getAverageExecutedPriceFor(String ric) {
+    public BigDecimal getAverageExecutedPriceFor(String ric) {
         Iterable<Order> orders = Iterables.filter(getExecutedOrders(), new RicMatcher(ric));
-        Double sum = 0.0;
+        BigDecimal sum = PriceUtil.roundUp(0.00);
         for (Order anOrder : orders) {
-            sum += anOrder.getExecutionPrice();
+            sum = sum.add(anOrder.getExecutionPrice());
         }
-        return sum / Iterables.size(orders);
+        BigDecimal orderSize = new BigDecimal(Iterables.size(orders));
+        orderSize = orderSize.setScale(2, RoundingMode.UP);
+        return sum.doubleValue() > 0.0 ? sum.divide(orderSize, 0) : null;
     }
 
-    public Map<Double, Integer> getOpenInterestFor(String ric, Direction direction) {
-        Map<Double, Integer> map = Maps.newHashMap();
-        Map<Double, Collection<Order>> openInterestOrders = Multimaps.index(
+    public Map<BigDecimal, Integer> getOpenInterestFor(String ric, Direction direction) {
+        Map<BigDecimal, Integer> map = Maps.newHashMap();
+        Map<BigDecimal, Collection<Order>> openInterestOrders = Multimaps.index(
                         Iterables.filter(
                                         getOpenOrders(),
                                         Predicates.and(new RicMatcher(ric),
                                                         Predicates.not(new OpposingDirectionMatcher(direction)))),
-                        new Function<Order, Double>() {
-                            public Double apply(Order input) {
-                                return new Double(input.getPrice());
+                        new Function<Order, BigDecimal>() {
+                            public BigDecimal apply(Order input) {
+                                return input.getPrice();
                             }
                         }).asMap();
-        Set<Double> keySet = openInterestOrders.keySet();
-        for (Double key : keySet) {
+        Set<BigDecimal> keySet = openInterestOrders.keySet();
+        for (BigDecimal key : keySet) {
             Collection<Order> collection = openInterestOrders.get(key);
             int qty = 0;
             for (Order order : collection) {
@@ -136,34 +180,26 @@ public class StockServiceImpl implements StockService<Order> {
     protected Iterable<Order> getExecutedOrders() {
         return ImmutableList.copyOf(this.executedOrders);
     }
-    
-    /*
-     * Looks up a mathing Order's index.
-     */
-    private int findIndex(Order newOrder) {
-        @SuppressWarnings("unchecked")
-		int index = Iterables.indexOf(this.openOrders, Predicates.and(new RicMatcher(newOrder.getRic()),
-                        new OpposingDirectionMatcher(newOrder.getDirection()), new QuantityMatcher(newOrder.getQuantity()),
-                        new SellPriceMatcher(newOrder.getPrice())));
-        return index;
-    }
 
     /*
      * Notify handler of newly added Order.
      */
     private void notifyDataHandler(Order order) {
-        summaryHandler.handleNewOrder(order);
-        summaryHandler.handleAverageExecutionPriceFor(getAverageExecutedPriceFor(order.getRic()), order.getRic());
-        summaryHandler.handleExecutedQuantityFor(getExecutedQuantityFor(order.getRic(), order.getUser()), order.getRic(), order.getUser());
-        Map<Double, Integer> openInterest = getOpenInterestFor(order.getRic(), order.getDirection());
-        Double key = null;
-        Integer totQty = null;
-        if (!openInterest.keySet().isEmpty()) {
-            key = Lists.newArrayList(openInterest.keySet()).get(0);
-            totQty = openInterest.get(key);
-        }
+        if (order != null) {
+            summaryHandler.handleNewOrder(order);
+            // summaryHandler.handleAverageExecutionPriceFor(getAverageExecutedPriceFor(order.getRic()), order.getRic());
+            summaryHandler.handleExecutedQuantityFor(getExecutedQuantityFor(order.getRic(), order.getUser()), order.getRic(),
+                            order.getUser());
+            Map<BigDecimal, Integer> openInterest = getOpenInterestFor(order.getRic(), order.getDirection());
+            BigDecimal key = null;
+            Integer totQty = null;
+            if (!openInterest.keySet().isEmpty()) {
+                key = Lists.newArrayList(openInterest.keySet()).get(0);
+                totQty = openInterest.get(key);
+            }
 
-        summaryHandler.handleOpenInterestFor(totQty, order.getRic(), order.getDirection(), key);
+            summaryHandler.handleOpenInterestFor(totQty, order.getRic(), order.getDirection(), key);
+        }
     }
 
     @Required

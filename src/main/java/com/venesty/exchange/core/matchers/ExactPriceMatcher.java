@@ -1,5 +1,8 @@
 package com.venesty.exchange.core.matchers;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import com.google.common.base.Predicate;
 import com.venesty.exchange.model.Order;
 
@@ -11,14 +14,14 @@ import com.venesty.exchange.model.Order;
  */
 public class ExactPriceMatcher implements Predicate<Order> {
 
-	private Double price;
+    private BigDecimal price;
 	
-	public ExactPriceMatcher(Double price) {
-		this.price = price;
+    public ExactPriceMatcher(BigDecimal price) {
+        this.price = price.setScale(2, RoundingMode.UP);
 	}
 	
 	public boolean apply(Order input) {
-		return this.price.equals(input.getPrice());
+        return this.price.equals(input.getPrice());
 	}
 
 }

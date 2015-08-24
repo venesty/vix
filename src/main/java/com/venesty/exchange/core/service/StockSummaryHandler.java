@@ -1,5 +1,7 @@
 package com.venesty.exchange.core.service;
 
+import java.math.BigDecimal;
+
 import com.venesty.exchange.model.Order;
 import com.venesty.exchange.model.Order.Direction;
 
@@ -35,7 +37,7 @@ public interface StockSummaryHandler {
      * @param executedPrice
      * @param ric
      */
-    public void handleAverageExecutionPriceFor(Double executedPrice, String ric);
+    public void handleAverageExecutionPriceFor(BigDecimal executedPrice, String ric);
 
     /**
      * Open interest info received for given ric, {@link Direction} for given price point.
@@ -45,6 +47,6 @@ public interface StockSummaryHandler {
      * @param direction
      * @param price
      */
-    public void handleOpenInterestFor(Integer totalQuantity, String ric, Direction direction, Double price);
+    public void handleOpenInterestFor(Integer totalQuantity, String ric, Direction direction, BigDecimal price);
 
 }

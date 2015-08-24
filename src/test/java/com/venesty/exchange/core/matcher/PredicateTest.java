@@ -3,6 +3,7 @@ package com.venesty.exchange.core.matcher;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.junit.Before;
@@ -28,21 +29,21 @@ public class PredicateTest {
 	public void setUp() {
 		
 		openOrders = Lists.newArrayList(
-				new Order("VOD.L", 1000, 101.00, Direction.SELL, "user1"),
-				new Order("VOD.L", 500, 100.00, Direction.SELL, "user2"),
-				new Order("VOD.L", 1000, 99.00, Direction.BUY, "user3"),
-				new Order("VOD.L", 500, 101.00, Direction.BUY, "user1"),
-				new Order("VOD.L", 1000, 102.00, Direction.SELL, "user2"),
-				new Order("APP.L", 1000, 101.00, Direction.SELL, "user3"),
-				new Order("APP.L", 500, 100.00, Direction.SELL, "user1"),
-				new Order("APP.L", 1000, 99.00, Direction.BUY, "user2"),
-				new Order("APP.L", 500, 101.00, Direction.BUY, "user1"),
-				new Order("APP.L", 1000, 102.00, Direction.SELL, "user4"));
+				new Order("VOD.L", 1000, "101.00", Direction.SELL, "user1"),
+				new Order("VOD.L", 500, "100.00", Direction.SELL, "user2"),
+				new Order("VOD.L", 1000, "99.00", Direction.BUY, "user3"),
+				new Order("VOD.L", 500, "101.00", Direction.BUY, "user1"),
+				new Order("VOD.L", 1000, "102.00", Direction.SELL, "user2"),
+				new Order("APP.L", 1000, "101.00", Direction.SELL, "user3"),
+				new Order("APP.L", 500, "100.00", Direction.SELL, "user1"),
+				new Order("APP.L", 1000, "99.00", Direction.BUY, "user2"),
+				new Order("APP.L", 500, "101.00", Direction.BUY, "user1"),
+				new Order("APP.L", 1000, "102.00", Direction.SELL, "user4"));
 	}
 
 	@Test
 	public void testExactPriceMatch() {
-		Iterable<Order> matches = Iterables.filter(openOrders, new ExactPriceMatcher(99.00));
+        Iterable<Order> matches = Iterables.filter(openOrders, new ExactPriceMatcher(new BigDecimal(99.00)));
 		assertThat(matches, contains(openOrders.get(2), openOrders.get(7)));
 	}
 
@@ -66,7 +67,7 @@ public class PredicateTest {
 
 	@Test
 	public void testSellPriceMatcher() {
-		Iterable<Order> matches = Iterables.filter(openOrders, new SellPriceMatcher(99.99));
+        Iterable<Order> matches = Iterables.filter(openOrders, new SellPriceMatcher(new BigDecimal(99.99)));
 		assertThat(matches, contains(openOrders.get(3), openOrders.get(8)));
 	}
 	
@@ -82,7 +83,7 @@ public class PredicateTest {
 		Iterable<Order> matches = Iterables.filter(openOrders, Predicates.and(new RicMatcher("app.l"), 
 				new OpposingDirectionMatcher(Direction.BUY), 
 				new QuantityMatcher(1000),
-				new SellPriceMatcher(101.10)));
+				new SellPriceMatcher(new BigDecimal(101.10))));
 		
 		assertThat(matches, contains(openOrders.get(5)));
 	}

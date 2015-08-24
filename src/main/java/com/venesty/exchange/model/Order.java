@@ -1,5 +1,9 @@
 package com.venesty.exchange.model;
 
+import java.math.BigDecimal;
+
+import utils.PriceUtil;
+
 /**
  * Simple model object representing an {@link Order}
  * 
@@ -18,21 +22,25 @@ public class Order {
 	
 	private Integer quantity;
 	
-	private Double price;
+	private BigDecimal price;
 	
 	private Direction direction;
 	
 	private String user;
 	
-	private Double executionPrice;
+	private BigDecimal executionPrice;
 	
-	public Order(String ric, Integer quantity, Double price, Direction direction, String user) {
-		this.ric = ric;
-		this.quantity = quantity;
-		this.price = price;
-		this.direction = direction;
-		this.user = user;
+	public Order(String ric, Integer quantity, String price, Direction direction, String user) {
+        this(ric, quantity, new BigDecimal(price), direction, user);
 	}
+
+    public Order(String ric, Integer quantity, BigDecimal price, Direction direction, String user) {
+        this.ric = ric;
+        this.quantity = quantity;
+        this.direction = direction;
+        this.user = user;
+        this.price = PriceUtil.roundUp(price);
+    }
 
 	public String getRic() {
 		return ric;
@@ -42,15 +50,15 @@ public class Order {
 		return quantity;
 	}
 	
-	public Double getPrice() {
+	public BigDecimal getPrice() {
 		return price;
 	}
 	
-	public void setExecutionPrice(Double executionPrice) {
+	public void setExecutionPrice(BigDecimal executionPrice) {
 		this.executionPrice = executionPrice;
 	}
 	
-	public Double getExecutionPrice() {
+	public BigDecimal getExecutionPrice() {
 		return executionPrice;
 	}
 	

@@ -14,10 +14,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.venesty.exchange.core.exception.ProcessorException;
 import com.venesty.exchange.core.processor.OrderProcessor;
-import com.venesty.exchange.integration.IntegrationTest;
 import com.venesty.exchange.model.Order;
 import com.venesty.exchange.util.OrderMother;
 import com.venesty.exchange.util.TestStockService;
+import com.venesty.exchange.util.integration.IntegrationTest;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:application-context-exchange-test.xml" })
@@ -52,6 +52,9 @@ public class OrderProcessorTest {
     	
     	orderProcessor.startProcessor();
     	
+        assertThat(stockService.currentOpenOrdersSize(), equalTo(0));
+        assertThat(stockService.currentExecutedOrdersSize(), equalTo(0));
+
         for (Order order : OrderMother.getOpenOrders()) {
         	orderProcessor.addNewOrder(order);
         }
@@ -60,7 +63,7 @@ public class OrderProcessorTest {
         orderProcessor.awaitCompletion();
         
         assertThat(stockService.currentOpenOrdersSize(), equalTo(6));
-        assertThat(stockService.currentExecutedOrdersSize(), equalTo(2));
+        assertThat(stockService.currentExecutedOrdersSize(), equalTo(4));
         
     }
     
@@ -91,8 +94,8 @@ public class OrderProcessorTest {
     	
     	orderProcessor.awaitCompletion();
     	
-    	assertThat(stockService.currentOpenOrdersSize(), equalTo(100));
-    	assertThat(stockService.currentExecutedOrdersSize(), equalTo(100));
+        assertThat(stockService.currentOpenOrdersSize(), equalTo(200));
+        assertThat(stockService.currentExecutedOrdersSize(), equalTo(200));
     }
 
 }

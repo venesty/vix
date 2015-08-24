@@ -1,5 +1,6 @@
 package com.venesty.exchange.core.service;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import com.venesty.exchange.model.Order;
@@ -37,9 +38,9 @@ public interface StockService<T extends Order> {
      * 
      * @param ric to lookup
      * 
-     * @return average executed price as Double
+     * @return average executed price as {@link BigDecimal}
      */
-    public Double getAverageExecutedPriceFor(String ric);
+    public BigDecimal getAverageExecutedPriceFor(String ric);
 
     /**
      * Returns the total stock quantity for eith buy or sell at given price point for
@@ -51,6 +52,6 @@ public interface StockService<T extends Order> {
      * 
      * @return {@link Map} key providing the price and value then total quantity.
      */
-    public Map<Double, Integer> getOpenInterestFor(String ric, Direction direction);
+    public Map<BigDecimal, Integer> getOpenInterestFor(String ric, Direction direction);
 
 }

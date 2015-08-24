@@ -1,4 +1,4 @@
-package com.venesty.exchange.integration;
+package com.venesty.exchange.util.integration;
 
 /**
  * Marker interface for Integration tests.

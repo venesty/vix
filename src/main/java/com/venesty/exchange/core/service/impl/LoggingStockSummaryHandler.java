@@ -1,5 +1,7 @@
 package com.venesty.exchange.core.service.impl;
 
+import java.math.BigDecimal;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,11 +26,11 @@ public class LoggingStockSummaryHandler implements StockSummaryHandler {
 	}
 
 
-    public void handleAverageExecutionPriceFor(Double executedPrice, String ric) {
+    public void handleAverageExecutionPriceFor(BigDecimal executedPrice, String ric) {
         LOG.info("Average " + ric + " exec. price" + executedPrice + "");
     }
 
-    public void handleOpenInterestFor(Integer totalQuantity, String ric, Direction direction, Double price) {
+    public void handleOpenInterestFor(Integer totalQuantity, String ric, Direction direction, BigDecimal price) {
         LOG.info("Open " + ric + " " + direction + " " + totalQuantity + " @ " + price + "");
     }
 
